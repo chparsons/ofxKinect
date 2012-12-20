@@ -70,10 +70,11 @@ ofxKinect::ofxKinect() {
 	timeSinceOpen = 0;
 	bGotData = false;
 
-	bUseRegistration = false;
 	bNearWhite = true;
 
 	setDepthClipping();
+    
+    setDepthMode( FREENECT_DEPTH_MM );
 }
 
 //--------------------------------------------------------------------
@@ -157,7 +158,13 @@ void ofxKinect::clear() {
 
 //--------------------------------------------------------------------
 void ofxKinect::setRegistration(bool bUseRegistration) {
-	this->bUseRegistration = bUseRegistration;
+    freenect_depth_format mode = bUseRegistration ? FREENECT_DEPTH_REGISTERED : ( _depthMode == FREENECT_DEPTH_REGISTERED ? FREENECT_DEPTH_MM : _depthMode );
+    setDepthMode( mode );
+}
+
+void ofxKinect::setDepthMode( freenect_depth_format mode ) {
+	this->_depthMode = mode;
+    updateDepthLookupTable();
 }
 
 //--------------------------------------------------------------------
@@ -563,8 +570,14 @@ void ofxKinect::updateDepthLookupTable() {
 	depthLookupTable.resize(maxDepthLevels);
 	depthLookupTable[0] = 0;
 	for(int i = 1; i < maxDepthLevels; i++) {
-		depthLookupTable[i] = ofMap(i, nearClipping, farClipping, nearColor, farColor, true);
+        float z = _depthMode == FREENECT_DEPTH_11BIT ? raw2mm(i) : i;
+		depthLookupTable[i] = ofMap(z, nearClipping, farClipping, nearColor, farColor, true);
 	}
+}
+
+float ofxKinect::raw2mm(unsigned short raw) {
+    float k1 = 0.1236, k2 = 2842.5, k3 = 1.1863, k4 = 0.0370;
+    return 1000 * (k1 * tanf((raw / k2) + k3) - k4);
 }
 
 //----------------------------------------------------------
@@ -612,7 +625,7 @@ void ofxKinect::threadedFunction(){
 	freenect_set_led(kinectDevice, LED_GREEN);
 	freenect_frame_mode videoMode = freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, bIsVideoInfrared?FREENECT_VIDEO_IR_8BIT:FREENECT_VIDEO_RGB);
 	freenect_set_video_mode(kinectDevice, videoMode);
-	freenect_frame_mode depthMode = freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, bUseRegistration?FREENECT_DEPTH_REGISTERED:FREENECT_DEPTH_MM);
+	freenect_frame_mode depthMode = freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, _depthMode);
 	freenect_set_depth_mode(kinectDevice, depthMode);
 
 	ofLog(OF_LOG_VERBOSE, "ofxKinect: Device %d %s connection opened", deviceId, serial.c_str());

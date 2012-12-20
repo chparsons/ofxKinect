@@ -80,6 +80,8 @@ public:
 	/// note: this calculation uses some cpu, leave off if not needed
 	void setRegistration(bool bUseRegistration=false);
 
+    void setDepthMode( freenect_depth_format mode );
+
 	/// open the connection and start grabbing images
 	///
 	/// set the id to choose a kinect, see numAvailableDevices()
@@ -308,6 +310,8 @@ private:
 	static ofxKinectContext kinectContext;
 
 	freenect_device* kinectDevice;      ///< kinect device handle
+    
+    freenect_depth_format _depthMode;
 
 	ofShortPixels depthPixelsRawBack;	///< depth back
 	ofPixels videoPixelsBack;			///< rgb back
@@ -315,12 +319,12 @@ private:
 	vector<unsigned char> depthLookupTable;
 	void updateDepthLookupTable();
 	void updateDepthPixels();
+    float raw2mm(unsigned short raw);
 
 	bool bIsFrameNew;
 	bool bNeedsUpdate;
 	bool bUpdateTex;
 	bool bGrabVideo;
-	bool bUseRegistration;
 	bool bNearWhite;
 
 	float nearClipping, farClipping;
