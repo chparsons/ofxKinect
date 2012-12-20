@@ -163,7 +163,7 @@ void ofxKinect::setRegistration(bool bUseRegistration) {
 }
 
 void ofxKinect::setDepthMode( freenect_depth_format mode ) {
-	this->_depthMode = mode;
+    this->_depthMode = mode;
     updateDepthLookupTable();
 }
 
